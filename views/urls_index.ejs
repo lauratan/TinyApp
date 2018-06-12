@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+ <% include ./partials/_header %>
+  <title>TinyApp</title>
+</head>
+<body>
+    <!-- Add your EJS code here -->
+  <% for (const key in urls) { %>
+    <h3><%= `${key}: \n` %><h3>
+    <h3><%= `${urls[key]}` %><h3>
+  <% } %>
+</body>
+</html>
