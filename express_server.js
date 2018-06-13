@@ -11,6 +11,7 @@ var urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+
 app.get("/", (req, res) => {
   res.end("Hello! ");
 });
@@ -33,8 +34,17 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  console.log(req.body);  // debug statement to see POST parameters
-  res.send("Ok");         // Respond with 'Ok' (we will replace this)
+  let shortURL = generateRandomString();
+  let longURL = req.body.longURL;
+  //save it in the database
+  urlDatabase[shortURL] = longURL;
+  res.redirect("/urls");
+});
+
+app.get("/urls/:shortURL", (req, res) => { 
+  // console.log(urlDatabase[req.params.shortURL]);
+  let longURL = urlDatabase[req.params.shortURL];
+  res.redirect(longURL);
 });
 
 app.get("/urls/:id", (req, res) => {
@@ -51,7 +61,7 @@ function generateRandomString() {
   const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   for (let i = 0; i < 6; i++)
     randomString += possible.charAt(Math.floor(Math.random() * possible.length));
-  console.log(text);
+  
   return randomString;
 }
 
