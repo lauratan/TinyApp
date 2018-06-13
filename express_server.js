@@ -13,7 +13,7 @@ var urlDatabase = {
 
 
 app.get("/", (req, res) => {
-  res.end("Hello! ");
+  res.end("Hello! This is the TinyApp ");
 });
 
 app.get("/urls.json", (req, res) => {
@@ -21,13 +21,23 @@ app.get("/urls.json", (req, res) => {
 });
 
 app.get("/hello", (req, res) => {
-  res.end("<html><body>Hello <b>World</b></body></html>\n");
+  res.end("<html><body><b>Hello</b> <b>World</b></body></html>\n");
 });
 
 app.get("/urls", (req, res)=> {
   let templateVars = { urls: urlDatabase };
   res.render("urls_index", templateVars);
 });    
+
+app.get("/urls/:id/update", (req, res) => {
+  let templateVars = { shortURL: req.params.id, urls: urlDatabase}; 
+  res.render("urls_show", templateVars);
+});
+
+app.post("/urls/:id/update", (req, res) => {
+  urlDatabase[req.params.id] = req.body.longURL;
+  res.redirect("/urls");
+});
 
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");
@@ -41,15 +51,21 @@ app.post("/urls", (req, res) => {
   res.redirect("/urls");
 });
 
-app.get("/urls/:shortURL", (req, res) => { 
+app.get("/urls/:id", (req, res) => {
+  let templateVars = { shortURL: req.params.id, urls: urlDatabase}; 
+  res.render("urls_show", templateVars);
+});
+
+app.get("/u/:shortURL", (req, res) => { 
   // console.log(urlDatabase[req.params.shortURL]);
   let longURL = urlDatabase[req.params.shortURL];
   res.redirect(longURL);
 });
 
-app.get("/urls/:id", (req, res) => {
-  let templateVars = { shortURL: req.params.id, urls: urlDatabase}; 
-  res.render("urls_show", templateVars);
+app.post("/urls/:id/delete", (req, res) => {
+  // delete urlDatabase
+  delete urlDatabase[req.params.id]
+  res.redirect("/urls");
 });
 
 app.listen(PORT, () => {
