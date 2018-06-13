@@ -2,13 +2,15 @@
 <html lang="en">
 <head>
  <% include ./partials/_header %>
-  <title>TinyApp</title>
 </head>
 <body>
     <!-- Add your EJS code here -->
+  <h2> List of URLs <h2>
+  <form method="POST" action="/urls/9sm5xK/delete">...</form>
   <% for (const key in urls) { %>
-    <h3><%= `${key}: \n` %><h3>
-    <h3><%= `${urls[key]}` %><h3>
+    <li><%= key %> : <%= urls[key] %></li>
   <% } %>
+<a href="/urls/new"> Enter new URL to shorten </a>
 </body>
+
 </html>
