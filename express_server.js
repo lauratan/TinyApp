@@ -13,6 +13,19 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+const users = { 
+  "randomID1": {
+    id: "1", 
+    email: "user@example.com", 
+    password: "purple-monkey-dinosaur"
+  },
+  "randomID2": {
+    id: "2", 
+    email: "user2@example.com", 
+    password: "dishwasher-funk"
+  }
+}
+
 app.get("/", (req, res) => {
   res.end("Hello! This is the TinyApp ");
 });
@@ -64,6 +77,10 @@ app.get("/u/:shortURL", (req, res) => {
   res.redirect(longURL);
 });
 
+app.get("/register", (req, res) => {
+  res.render("register")
+});
+
 app.post("/urls", (req, res) => {
   let shortURL = generateRandomString();
   let longURL = req.body.longURL;
@@ -95,9 +112,38 @@ app.post("/logout", (req, res) => {
   res.redirect("/urls");
 });
 
-app.listen(PORT, () => {
-  console.log(`Tiny App listening on port ${PORT}!`);
+//Post Register Endpoint
+app.post("/register", (req, res) => {
+  let userID = generateRandomString();
+  let email = req.body.email;
+  let password = req.body.password;
+
+  if (email == "" || password == ""){
+    res.status(400).send("Please enter email or password");
+  }
+  else {
+    if (checkExisting(email)){
+      res.status(400).send("Email already registered!");
+    }
+    else {
+      users[userID] = { 
+        userID: userID, 
+        email: email, 
+        password: password
+      }
+    }
+  };
+  res.cookie('user_id', userID);
+  res.redirect("/urls");
 });
+
+function checkExisting(email){
+  for (let key in users){
+    if (users[key].email === email){
+      return true;
+    }
+  }
+};
 
 function generateRandomString() {
   let randomString = "";
@@ -108,3 +154,6 @@ function generateRandomString() {
   return randomString;
 }
 
+app.listen(PORT, () => {
+  console.log(`Tiny App listening on port ${PORT}!`);
+});
