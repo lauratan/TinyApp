@@ -2,19 +2,18 @@ const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
-const cookieParser = require('cookie-parser')
+const cookieParser = require('cookie-parser');
+const bcrypt = require('bcrypt');
+// const password = req.params.userID.password;
+// const hashedPassword = bcrypt.hashSync(password, 10);
 
 app.use(bodyParser.urlencoded({extended: true}));
 app.set("view engine", "ejs");
 app.use(cookieParser());
 
-const urlDatabase = {
+let urlDatabase = {
   "b2xVn2": {
     url: "http://www.lighthouselabs.ca",
-    userID: "1"
-  },
-  "ab2hgfn": {
-    url: "http://www.john.ca",
     userID: "1"
   },
   "9sm5xK": {
@@ -23,11 +22,11 @@ const urlDatabase = {
   }
 };
 
-const users = { 
+let users = { 
   "1": {
     id: "1", 
     email: "user@example.com", 
-    password: "purple-monkey-dinosaur"
+    password: bcrypt.hashSync("purple-monkey-dinosaur", 10)
   },
   "2": {
     id: "2", 
@@ -35,6 +34,7 @@ const users = {
     password: "dishwasher-funk"
   }
 }
+// const hashedPassword = bcrypt.hashSync(users["1"].password, 10);
 
 //Get the userid given email and checks if it equates to the email in database
 function getUserByEmail(email){
@@ -65,6 +65,17 @@ function checkExisting(email){
   }
 };
 
+function getUrlofUser(userId){
+  const userURLs = {};
+  for (let shortCode in urlDatabase){
+    const urlObj = urlDatabase[shortCode];
+    if (userId === urlObj.userID){
+      userURLs[shortCode] = urlObj
+    } 
+  }
+  return userURLs;
+};
+
 app.get("/", (req, res) => {
   res.end("Hello! This is the TinyApp ");
 });
@@ -80,32 +91,32 @@ app.get("/hello", (req, res) => {
 //renders urls_index page where it shows the list of long and short URLs in the database 
 app.get("/urls", (req, res)=> {
   const userID = req.cookies["user_id"];
-  let templateVars = { 
-    urls: getUrlofUser(userID),
-    user: users[userID]
-  };
-  res.render("urls_index", templateVars);
+  if (userID){
+    let templateVars = { 
+      urls: getUrlofUser(userID),
+      user: users[userID]
+    };
+    res.render("urls_index", templateVars);
+  }
+  else {
+    res.redirect("/login");
+  }
 });    
 
-function getUrlofUser(userId){
-  const userURLs = {};
-  for (let shortCode in urlDatabase){
-    const urlObj = urlDatabase[shortCode];
-    if (userId === urlObj.userID){
-      userURLs[shortCode] = urlObj
-    } 
-  }
-  return userURLs;
-};
 //Renders urls_show and allows user to update the longURL
 app.get("/urls/:id/update", (req, res) => {
   const userID = req.cookies["user_id"];
   let templateVars = { 
     shortURL: req.params.id, 
-    urls: getUrlOfUser(userID),
+    urls: urlDatabase,
     user: users[userID]
   };
-  res.render("urls_show", templateVars);
+  if (userID){
+    res.render("urls_show", templateVars);
+  }
+  else {
+    res.redirect("/login");
+  }
 });
 
 //Render urls_new page where users can add a new url
@@ -135,7 +146,7 @@ app.get("/urls/:id", (req, res) => {
 //Redirect to the longURL that was associated with the shortURL
 app.get("/u/:shortURL", (req, res) => { 
   // console.log(urlDatabase[req.params.shortURL]);
-  let longURL = urlDatabase[req.params.shortURL];
+  let longURL = urlDatabase[req.params.shortURL].url;
   res.redirect(longURL);
 });
 
@@ -153,31 +164,58 @@ app.get("/login", (req, res) => {
 app.post("/urls", (req, res) => {
   let shortURL = generateRandomString();
   let longURL = req.body.longURL;
+
+  var newUrl = {
+    url: longURL,
+    userID: req.cookies.user_id
+  };
   //save it in the database
-  urlDatabase[shortURL] = longURL;
+  urlDatabase[shortURL] = newUrl;
   res.redirect("/urls");
 });
 
 //Updating the longURL associated to the shortURL
 app.post("/urls/:id/update", (req, res) => {
-  urlDatabase[req.params.id] = req.body.longURL;
-  res.redirect("/urls");
+  const userID = req.cookies["user_id"];
+  if (userID) {
+    urlDatabase[req.params.id].url = req.body.longURL;
+    res.redirect("/urls");
+  }
+  else {
+    res.redirect("/login");
+  }
 });
 
 //Delete shortURL from urlDatabase
 app.post("/urls/:id/delete", (req, res) => {
-  delete urlDatabase[req.params.id]
-  res.redirect("/urls");
+  const userID = req.cookies["user_id"];
+  if (userID){
+    delete urlDatabase[req.params.id];
+    res.redirect("/urls");
+  }
+  else {
+    res.redirect("/login");
+  }
 });
 
-//Login Route which checks if email exists in database and if it does it also check if the password entered matches the password in database
+// const urlDatabase = {
+//   "b2xVn2": {
+//     url: "http://www.lighthouselabs.ca",
+//     userID: "1"
+//   },
+
+//Login Endpoint which checks if email exists in database and if it does it also check if the password entered matches the password in database
 app.post("/login", (req, res) => {
-  let {email, password} = req.body
+  let email = req.body.email;
+  let password = req.body.password;
   const user = getUserByEmail(email);
+
+  
   if (user){
-    if (user.password === password){
+    //bcrypt.compareSync("purple-monkey-dinosaur", hashedPassword)
+    if (bcrypt.compareSync(password, hashedPassword)){
       res.cookie('user_id', user.id);
-      return res.redirect("/");
+      return res.redirect("/urls");
     }
     return res.status(403).send("Password don't match");
   }
@@ -198,6 +236,7 @@ app.post("/register", (req, res) => {
   let userID = generateRandomString();
   let email = req.body.email;
   let password = req.body.password;
+  const hashedPassword = bcrypt.hashedSync(password, 10);
 
   if (email == "" || password == ""){
     res.status(400).send("Please enter email or password");
@@ -213,7 +252,7 @@ app.post("/register", (req, res) => {
       users[userID] = { 
         id: userID, 
         email: email, 
-        password: password
+        password: hashedPassword
       }
     }
   };
