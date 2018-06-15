@@ -6,11 +6,11 @@
 <body>
     <!-- Add your EJS code here -->
   <h2> List of URLs <h2>
-  <% for (const key in urls) { %>
-    <%= key %> : <%= urls[key] %> 
+  <% for (const shortURL in urls) { %>
+    <%= shortURL %> : <%= urls[shortURL].url %> 
     <br><br>
-    <a href="/urls/<%= key %>/update" input id="shortURL" type="text" name="shortURL">update </a> 
-    <form method="POST" action="/urls/<%= key %>/delete"> 
+    <a href="/urls/<%= shortURL %>/update" input id="shortURL" type="text" name="shortURL">update </a> 
+    <form method="POST" action="/urls/<%= shortURL %>/delete"> 
     <button>delete</button> 
     <br><br> 
     </form>   

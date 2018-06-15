@@ -9,22 +9,61 @@ app.set("view engine", "ejs");
 app.use(cookieParser());
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  "b2xVn2": {
+    url: "http://www.lighthouselabs.ca",
+    userID: "1"
+  },
+  "ab2hgfn": {
+    url: "http://www.john.ca",
+    userID: "1"
+  },
+  "9sm5xK": {
+    url: "http://www.google.com",
+    userID: "2"
+  }
 };
 
 const users = { 
-  "randomID1": {
+  "1": {
     id: "1", 
     email: "user@example.com", 
     password: "purple-monkey-dinosaur"
   },
-  "randomID2": {
+  "2": {
     id: "2", 
     email: "user2@example.com", 
     password: "dishwasher-funk"
   }
 }
+
+//Get the userid given email and checks if it equates to the email in database
+function getUserByEmail(email){
+  for (let user in users){
+    if (users[user].email === email){
+      return users[user];
+    }
+  }
+  return null;
+}
+
+//Generate 6 random characters
+function generateRandomString() {
+  let randomString = "";
+  const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  for (let i = 0; i < 6; i++)
+    randomString += possible.charAt(Math.floor(Math.random() * possible.length));
+  
+  return randomString;
+}
+
+//Check if email already exist in users database
+function checkExisting(email){
+  for (let key in users){
+    if (users[key].email === email){
+      return true;
+    }
+  }
+};
 
 app.get("/", (req, res) => {
   res.end("Hello! This is the TinyApp ");
@@ -38,49 +77,79 @@ app.get("/hello", (req, res) => {
   res.end("<html><body><b>Hello</b> <b>World</b></body></html>\n");
 });
 
+//renders urls_index page where it shows the list of long and short URLs in the database 
 app.get("/urls", (req, res)=> {
+  const userID = req.cookies["user_id"];
   let templateVars = { 
-    urls: urlDatabase,
-    username: req.cookies["username"] 
+    urls: getUrlofUser(userID),
+    user: users[userID]
   };
   res.render("urls_index", templateVars);
 });    
 
+function getUrlofUser(userId){
+  const userURLs = {};
+  for (let shortCode in urlDatabase){
+    const urlObj = urlDatabase[shortCode];
+    if (userId === urlObj.userID){
+      userURLs[shortCode] = urlObj
+    } 
+  }
+  return userURLs;
+};
+//Renders urls_show and allows user to update the longURL
 app.get("/urls/:id/update", (req, res) => {
+  const userID = req.cookies["user_id"];
   let templateVars = { 
     shortURL: req.params.id, 
-    urls: urlDatabase,
-    username: req.cookies["username"] 
+    urls: getUrlOfUser(userID),
+    user: users[userID]
   };
   res.render("urls_show", templateVars);
 });
 
+//Render urls_new page where users can add a new url
 app.get("/urls/new", (req, res) => {
+  const userID = req.cookies["user_id"];
   let templateVars = {
-    username: req.cookies["username"] 
+    user: users[userID]
   };
-  res.render("urls_new", templateVars);
+  if (userID === undefined){
+    return res.redirect("/login");
+  }
+  else{
+    res.render("urls_new", templateVars);
+  }
 });
 
 app.get("/urls/:id", (req, res) => {
+  const userID = req.cookies["user_id"];
   let templateVars = { 
     shortURL: req.params.id, 
-    urls: urlDatabase,
-    username: req.cookies["username"] 
+    urls: getUrlOfUser(userID),
+    user: users[userID]
   }; 
   res.render("urls_show", templateVars);
 });
 
+//Redirect to the longURL that was associated with the shortURL
 app.get("/u/:shortURL", (req, res) => { 
   // console.log(urlDatabase[req.params.shortURL]);
   let longURL = urlDatabase[req.params.shortURL];
   res.redirect(longURL);
 });
 
+//Render register page
 app.get("/register", (req, res) => {
   res.render("register")
 });
 
+//Render log in page
+app.get("/login", (req, res) => {
+  res.render("log_in")
+});
+
+//Adding a new shortURL to the given longURL to the urlDatabase
 app.post("/urls", (req, res) => {
   let shortURL = generateRandomString();
   let longURL = req.body.longURL;
@@ -89,26 +158,38 @@ app.post("/urls", (req, res) => {
   res.redirect("/urls");
 });
 
+//Updating the longURL associated to the shortURL
 app.post("/urls/:id/update", (req, res) => {
   urlDatabase[req.params.id] = req.body.longURL;
   res.redirect("/urls");
 });
 
+//Delete shortURL from urlDatabase
 app.post("/urls/:id/delete", (req, res) => {
-  // delete urlDatabase
   delete urlDatabase[req.params.id]
   res.redirect("/urls");
 });
 
-//Login Route
+//Login Route which checks if email exists in database and if it does it also check if the password entered matches the password in database
 app.post("/login", (req, res) => {
-  res.cookie('username', req.body.username);
-  res.redirect("/urls");
+  let {email, password} = req.body
+  const user = getUserByEmail(email);
+  if (user){
+    if (user.password === password){
+      res.cookie('user_id', user.id);
+      return res.redirect("/");
+    }
+    return res.status(403).send("Password don't match");
+  }
+  else {
+    return res.status(403).send("Email does not exist");
+  }
 });
+
 
 //Logout Route
 app.post("/logout", (req, res) => {
-  res.clearCookie('username');
+  res.clearCookie("user_id");
   res.redirect("/urls");
 });
 
@@ -123,36 +204,23 @@ app.post("/register", (req, res) => {
   }
   else {
     if (checkExisting(email)){
-      res.status(400).send("Email already registered!");
+      res.status(400).send("Email already registered");
     }
     else {
+      // console.log("userid", userID);
+      // console.log("email", email);
+      // console.log("password", password);
       users[userID] = { 
-        userID: userID, 
+        id: userID, 
         email: email, 
         password: password
       }
     }
   };
+  // console.log(userID);
   res.cookie('user_id', userID);
   res.redirect("/urls");
 });
-
-function checkExisting(email){
-  for (let key in users){
-    if (users[key].email === email){
-      return true;
-    }
-  }
-};
-
-function generateRandomString() {
-  let randomString = "";
-  const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  for (let i = 0; i < 6; i++)
-    randomString += possible.charAt(Math.floor(Math.random() * possible.length));
-  
-  return randomString;
-}
 
 app.listen(PORT, () => {
   console.log(`Tiny App listening on port ${PORT}!`);
