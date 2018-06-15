@@ -2,15 +2,18 @@ const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
-const cookieParser = require('cookie-parser');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const cookieSession = require('cookie-session')
 // const password = req.params.userID.password;
 // const hashedPassword = bcrypt.hashSync(password, 10);
 
 app.use(bodyParser.urlencoded({extended: true}));
 app.set("view engine", "ejs");
-app.use(cookieParser());
+
+app.use(cookieSession({
+  name: 'session',
+  keys: ['testKey']
+}));
 
 let urlDatabase = {
   "b2xVn2": {
@@ -91,7 +94,7 @@ app.get("/hello", (req, res) => {
 
 //renders urls_index page where it shows the list of long and short URLs in the database 
 app.get("/urls", (req, res)=> {
-  const userID = req.cookies["user_id"];
+  const userID = req.session.user_id;
   if (userID){
     let templateVars = { 
       urls: getUrlofUser(userID),
@@ -106,7 +109,7 @@ app.get("/urls", (req, res)=> {
 
 //Renders urls_show and allows user to update the longURL
 app.get("/urls/:id/update", (req, res) => {
-  const userID = req.cookies["user_id"];
+  const userID = req.session.user_id;
   let templateVars = { 
     shortURL: req.params.id, 
     urls: urlDatabase,
@@ -122,7 +125,7 @@ app.get("/urls/:id/update", (req, res) => {
 
 //Render urls_new page where users can add a new url
 app.get("/urls/new", (req, res) => {
-  const userID = req.cookies["user_id"];
+  const userID = req.session.user_id;
   let templateVars = {
     user: users[userID]
   };
@@ -135,7 +138,7 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:id", (req, res) => {
-  const userID = req.cookies["user_id"];
+  const userID = req.session.user_id;
   let templateVars = { 
     shortURL: req.params.id, 
     urls: getUrlOfUser(userID),
@@ -168,7 +171,7 @@ app.post("/urls", (req, res) => {
 
   var newUrl = {
     url: longURL,
-    userID: req.cookies.user_id
+    userID: req.session.user_id
   };
   //save it in the database
   urlDatabase[shortURL] = newUrl;
@@ -177,7 +180,7 @@ app.post("/urls", (req, res) => {
 
 //Updating the longURL associated to the shortURL
 app.post("/urls/:id/update", (req, res) => {
-  const userID = req.cookies["user_id"];
+  const userID = req.session.user_id;
   if (userID) {
     urlDatabase[req.params.id].url = req.body.longURL;
     res.redirect("/urls");
@@ -189,7 +192,7 @@ app.post("/urls/:id/update", (req, res) => {
 
 //Delete shortURL from urlDatabase
 app.post("/urls/:id/delete", (req, res) => {
-  const userID = req.cookies["user_id"];
+  const userID = req.session.user_id;
   if (userID){
     delete urlDatabase[req.params.id];
     res.redirect("/urls");
@@ -215,10 +218,12 @@ app.post("/login", (req, res) => {
   if (user){
     //bcrypt.compareSync("purple-monkey-dinosaur", hashedPassword)
     if (bcrypt.compareSync(password, user.password)){
-      res.cookie('user_id', user.id);
+      req.session.user_id = user.id;
       return res.redirect("/urls");
     }
+    else{
     return res.status(403).send("Password don't match");
+    }
   }
   else {
     return res.status(403).send("Email does not exist");
@@ -228,7 +233,7 @@ app.post("/login", (req, res) => {
 
 //Logout Route
 app.post("/logout", (req, res) => {
-  res.clearCookie("user_id");
+  req.session = null;
   res.redirect("/urls");
 });
 
@@ -257,8 +262,7 @@ app.post("/register", (req, res) => {
       }
     }
   };
-  // console.log(userID);
-  res.cookie('user_id', userID);
+  req.session.user_id = userID;
   res.redirect("/urls");
 });
 
