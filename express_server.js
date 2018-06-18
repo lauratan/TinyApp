@@ -179,7 +179,7 @@ app.get("/urls/:id", (req, res) => {
   const userID = req.session.user_id;
   let templateVars = { 
     shortURL: req.params.id, 
-    urls: getUrlOfUser(userID),
+    urls: getUrlofUser(userID),
     user: users[userID]
   }; 
   res.render("urls_show", templateVars);
