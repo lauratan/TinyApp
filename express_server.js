@@ -80,7 +80,7 @@ function getUrlofUser(userId){
 
 //Homepage 
 app.get("/", (req, res) => {
-  res.end("Hello! This is the TinyApp ");
+  res.redirect("/login");
 });
 
 //JSON format of the urlDatabase

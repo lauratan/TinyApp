@@ -1,28 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
- <% include ./head %> 
+  <% include ./head %> 
   <% include ./partials/_header %>
   <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-WskhaSGFgHYWDcbwN70/dfYBj47jz9qbsMId/iRN3ewGhXQFZCSftd1LZCfmhktB" crossorigin="anonymous">
-  <title> List of URLs </title>
 </head>
 <body>
+  <title> List of URLs </title>
   <div style="text-align: center">
-  <% for (const shortURL in urls) { %>
-    <h2><%= shortURL %> : <%= urls[shortURL].url %><h2>
+    <% for (const shortURL in urls) { %>
+      <h2><%= shortURL %> : <%= urls[shortURL].url %><h2>
       <h3><a href="/urls/<%= shortURL %>/update" input id="shortURL" type="text" name="shortURL">update </a><h3>
       <h3><form method="POST" action="/urls/<%= shortURL %>/delete"><h3>
-      <button>delete</button> 
-      <br><br> 
+        <button>delete</button> 
+        <br><br> 
       </form>   
-  <% } %> 
-<a href="/urls/new" class="btn btn-success"><font size="6">  Enter new URL to shorten </a>
-<hr>
-<div>
+    <% } %> 
+    <a href="/urls/new" class="btn btn-success"><font size="6">  Enter new URL to shorten </a>
+    <hr>
+  <div>
 <footer>
   <% include ./footer %>
 </footer>
 </body>
-
 </html>
 

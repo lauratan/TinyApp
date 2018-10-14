@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <% include ./head %>  
-  <% include ./partials/_header %>
-  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-WskhaSGFgHYWDcbwN70/dfYBj47jz9qbsMId/iRN3ewGhXQFZCSftd1LZCfmhktB" crossorigin="anonymous">
-  <title>TinyApp</title>
-</head>
-<body>
-  <br><br>
+  <head>
+    <% include ./head %>  
+    <% include ./partials/_header %>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-WskhaSGFgHYWDcbwN70/dfYBj47jz9qbsMId/iRN3ewGhXQFZCSftd1LZCfmhktB" crossorigin="anonymous">
+    <title>TinyApp</title>
+  </head>
+  <body>
+    <br><br>
     <h3> ShortURL: <b> <%= `${shortURL}` %> <h3>
     <h2><br> Current URL: <%= `${urls[shortURL].url}` %> <h2>
     <form action="/urls/<%=`${shortURL}`%>/update" method="POST" style="margin:150px;">
@@ -18,5 +18,5 @@
     <footer>
       <% include ./footer %>
     </footer>
-</body>
+  </body>
 </html>
